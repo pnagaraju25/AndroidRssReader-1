@@ -3,6 +3,7 @@ package com.ximoneighteen.android.rssreader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -55,9 +56,14 @@ public class FeedListActivity extends Activity {
 			@Override
 			public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
 				final Feed feed = (Feed) parent.getItemAtPosition(position);
-				db.removeFeed(feed);
-				adapter.remove(feed);
-				adapter.notifyDataSetChanged();
+				confirmAction("Are you sure you want to delete the '" + feed.getTitle() + "' feed?", new ConfirmableAction() {
+					@Override
+					public void run() {
+						db.removeFeed(feed);
+						adapter.remove(feed);
+						adapter.notifyDataSetChanged();
+					}
+				});
 				return true;
 			}
 		});
@@ -72,6 +78,27 @@ public class FeedListActivity extends Activity {
 			}
 
 		});
+	}
+
+	private interface ConfirmableAction {
+		public void run();
+	}
+
+	private void confirmAction(final String title, final ConfirmableAction action) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle(title);
+		builder.setPositiveButton("Yes", new OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				action.run();
+			}
+		});
+		builder.setNegativeButton("No", new OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+			}
+		});
+		builder.show();
 	}
 
 	@Override
