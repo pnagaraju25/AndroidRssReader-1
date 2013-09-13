@@ -1,5 +1,7 @@
 package com.ximoneighteen.android.rssreader.util;
 
+import java.util.List;
+
 import android.os.AsyncTask;
 
 import com.ximoneighteen.android.rssreader.model.Article;
@@ -19,9 +21,12 @@ public class UpdateFeedTask extends AsyncTask<Feed, Void, Void> {
 		RssDownloader downloader = new RssDownloader(feed);
 		downloader.run();
 
-		for (Article article : downloader.getArticles()) {
-			article.setParagraphs(ArticleParagraphFetcher.fetch(article.getLink()));
-			db.putArticle(article);
+		List<Article> articles = downloader.getArticles();
+		if (articles != null) {
+			for (Article article : articles) {
+				article.setParagraphs(ArticleParagraphFetcher.fetch(article.getLink()));
+				db.putArticle(article);
+			}
 		}
 
 		return null;
