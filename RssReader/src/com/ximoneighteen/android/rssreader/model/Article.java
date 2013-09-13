@@ -8,7 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-public class Article implements Comparable<Article>, Serializable {
+public class Article implements Comparable<Article>, Serializable, Identifiable {
 	private static final long serialVersionUID = -7074530680192770748L;
 
 	static SimpleDateFormat FORMATTER = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z");
@@ -158,7 +158,6 @@ public class Article implements Comparable<Article>, Serializable {
 
 	@Override
 	public String toString() {
-		return "Article [id=" + id + ", feedId=" + feedId + ", title=" + title + ", link=" + link + ", description="
-				+ description + ", date=" + date + ", paragraphs=" + paragraphs + "]";
+		return getTitle();
 	}
 }

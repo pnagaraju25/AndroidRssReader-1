@@ -1,18 +1,18 @@
-package com.ximoneighteen.android.rssreader;
+package com.ximoneighteen.android.rssreader.util;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ProtocolException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.xmlpull.v1.XmlPullParser;
 
-import com.ximoneighteen.android.rssreader.model.Article;
-
 import android.os.NetworkOnMainThreadException;
 import android.util.Xml;
+
+import com.ximoneighteen.android.rssreader.model.Article;
+import com.ximoneighteen.android.rssreader.model.Feed;
 
 public class RssDownloader implements Runnable {
 
@@ -23,19 +23,19 @@ public class RssDownloader implements Runnable {
 	private static final String PUB_DATE = "pubDate";
 	private static final String CHANNEL = "channel";
 
-	private final URL urlToDownload;
+	private final Feed feed;
 
-	private List<Article> items = null;
+	private List<Article> articles = null;
 
-	public RssDownloader(final URL url) {
-		this.urlToDownload = url;
+	public RssDownloader(final Feed feed) {
+		this.feed = feed;
 	}
 
 	@Override
 	public void run() {
 		InputStream is = null;
 		try {
-			is = HttpHelper.getInputStreamFromURL(urlToDownload);
+			is = HttpHelper.getInputStreamFromURL(feed.getUrl());
 			if (is != null) {
 				parseXML(is);
 			}
@@ -65,34 +65,35 @@ public class RssDownloader implements Runnable {
 			// auto-detect the encoding from the stream
 			parser.setInput(is, null);
 			int eventType = parser.getEventType();
-			Article currentItem = null;
+			Article article = null;
 			boolean done = false;
 			while (eventType != XmlPullParser.END_DOCUMENT && !done) {
 				String name = null;
 				switch (eventType) {
 				case XmlPullParser.START_DOCUMENT:
-					items = new ArrayList<Article>();
+					articles = new ArrayList<Article>();
 					break;
 				case XmlPullParser.START_TAG:
 					name = parser.getName();
 					if (name.equalsIgnoreCase(ITEM)) {
-						currentItem = new Article();
-					} else if (currentItem != null) {
+						article = new Article();
+						article.setFeedId(feed.getId());
+					} else if (article != null) {
 						if (name.equalsIgnoreCase(LINK)) {
-							currentItem.setLink(parser.nextText());
+							article.setLink(parser.nextText());
 						} else if (name.equalsIgnoreCase(DESCRIPTION)) {
-							currentItem.setDescription(parser.nextText());
+							article.setDescription(parser.nextText());
 						} else if (name.equalsIgnoreCase(PUB_DATE)) {
-							currentItem.setDate(parser.nextText());
+							article.setDate(parser.nextText());
 						} else if (name.equalsIgnoreCase(TITLE)) {
-							currentItem.setTitle(parser.nextText());
+							article.setTitle(parser.nextText());
 						}
 					}
 					break;
 				case XmlPullParser.END_TAG:
 					name = parser.getName();
-					if (name.equalsIgnoreCase(ITEM) && currentItem != null) {
-						items.add(currentItem);
+					if (name.equalsIgnoreCase(ITEM) && article != null) {
+						articles.add(article);
 					} else if (name.equalsIgnoreCase(CHANNEL)) {
 						done = true;
 					}
@@ -105,8 +106,8 @@ public class RssDownloader implements Runnable {
 		}
 	}
 
-	public List<Article> getItems() {
-		return items;
+	public List<Article> getArticles() {
+		return articles;
 	}
 
 }

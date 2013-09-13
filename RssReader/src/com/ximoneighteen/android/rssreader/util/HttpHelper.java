@@ -1,4 +1,4 @@
-package com.ximoneighteen.android.rssreader;
+package com.ximoneighteen.android.rssreader.util;
 
 import java.io.IOException;
 import java.io.InputStream;

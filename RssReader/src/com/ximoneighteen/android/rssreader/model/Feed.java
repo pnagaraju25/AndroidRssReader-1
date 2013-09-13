@@ -1,12 +1,14 @@
 package com.ximoneighteen.android.rssreader.model;
 
 import java.io.Serializable;
+import java.net.URL;
 
-public class Feed implements Comparable<Feed>, Serializable {
+public class Feed implements Comparable<Feed>, Serializable, Identifiable {
 	private static final long serialVersionUID = 8247717596952493083L;
 
 	private long id;
 	private String title;
+	private URL url;
 
 	@Override
 	public int compareTo(Feed another) {
@@ -16,6 +18,7 @@ public class Feed implements Comparable<Feed>, Serializable {
 		return title.compareTo(another.title);
 	}
 
+	@Override
 	public long getId() {
 		return id;
 	}
@@ -32,9 +35,17 @@ public class Feed implements Comparable<Feed>, Serializable {
 		this.title = title;
 	}
 
+	public URL getUrl() {
+		return url;
+	}
+
+	public void setUrl(URL uri) {
+		this.url = uri;
+	}
+
 	@Override
 	public String toString() {
-		return "Feed [id=" + id + ", title=" + title + "]";
+		return getTitle();
 	}
 
 	@Override
@@ -43,6 +54,7 @@ public class Feed implements Comparable<Feed>, Serializable {
 		int result = 1;
 		result = prime * result + (int) (id ^ (id >>> 32));
 		result = prime * result + ((title == null) ? 0 : title.hashCode());
+		result = prime * result + ((url == null) ? 0 : url.hashCode());
 		return result;
 	}
 
@@ -62,6 +74,12 @@ public class Feed implements Comparable<Feed>, Serializable {
 				return false;
 		} else if (!title.equals(other.title))
 			return false;
+		if (url == null) {
+			if (other.url != null)
+				return false;
+		} else if (!url.equals(other.url))
+			return false;
 		return true;
 	}
+
 }

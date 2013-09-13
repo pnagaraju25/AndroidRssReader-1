@@ -16,21 +16,28 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.ximoneighteen.android.rssreader.MainActivity"
+            android:name="com.ximoneighteen.android.rssreader.FeedListActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
-            android:name="com.ximoneighteen.android.rssreader.ArticleViewActivity"
-            android:parentActivityName="com.ximoneighteen.android.rssreader.MainActivity" >
+            android:name="com.ximoneighteen.android.rssreader.ArticleListActivity"
+            android:label="@string/title_activity_article_list"
+            android:parentActivityName="com.ximoneighteen.android.rssreader.FeedListActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.ximoneighteen.android.rssreader.MainActivity" />
+                android:value="com.ximoneighteen.android.rssreader.FeedListActivity" />
         </activity>
-    </application>
+        <activity
+            android:name="com.ximoneighteen.android.rssreader.ArticleViewActivity"
+            android:parentActivityName="com.ximoneighteen.android.rssreader.ArticleListActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.ximoneighteen.android.rssreader.ArticleListActivity" />
+        </activity>
+        </application>
 
 </manifest>
