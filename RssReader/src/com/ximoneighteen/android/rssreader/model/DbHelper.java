@@ -254,4 +254,13 @@ public class DbHelper extends SQLiteOpenHelper {
 		Log.d("XIMON", "Stored feed " + id + ": " + feed.getTitle());
 		return id;
 	}
+
+	public void removeFeed(final Feed feed) {
+		SQLiteDatabase writeDb = getWritableDatabase();
+		for (Article article : getArticlesForFeed(feed.getId())) {
+			writeDb.delete(Paragraphs.TABLE_NAME, Paragraphs.COLUMN_NAME_ITEM_ID + " = ?", new String[] { String.valueOf(article.getId()) });
+		}
+		writeDb.delete(Articles.TABLE_NAME, Articles.COLUMN_NAME_FEED_ID + " = ?", new String[] { String.valueOf(feed.getId()) });
+		writeDb.delete(Feeds.TABLE_NAME, Feeds.COLUMN_NAME_ID + " = ?", new String[] { String.valueOf(feed.getId()) });
+	}
 }

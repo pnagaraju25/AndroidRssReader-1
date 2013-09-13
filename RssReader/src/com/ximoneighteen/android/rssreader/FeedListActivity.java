@@ -55,6 +55,7 @@ public class FeedListActivity extends Activity {
 			@Override
 			public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
 				final Feed feed = (Feed) parent.getItemAtPosition(position);
+				db.removeFeed(feed);
 				adapter.remove(feed);
 				adapter.notifyDataSetChanged();
 				return true;
