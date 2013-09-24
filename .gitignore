@@ -1,4 +1,4 @@
-bin/.metadata
+bin/
 gen/
 .classpath
 .project
