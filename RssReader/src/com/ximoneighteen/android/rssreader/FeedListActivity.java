@@ -2,6 +2,7 @@ package com.ximoneighteen.android.rssreader;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.List;
 
 import android.app.Activity;
@@ -23,12 +24,13 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 
 import com.ximoneighteen.android.rssreader.model.DbHelper;
 import com.ximoneighteen.android.rssreader.model.Feed;
 import com.ximoneighteen.android.rssreader.model.Identifiable;
 import com.ximoneighteen.android.rssreader.util.IdentifiableListAdapter;
-import com.ximoneighteen.android.rssreader.util.UpdateFeedTask;
+import com.ximoneighteen.android.rssreader.util.UpdateFeedsTask;
 
 public class FeedListActivity extends Activity {
 	private static DbHelper db;
@@ -123,7 +125,7 @@ public class FeedListActivity extends Activity {
 			getFeedURL();
 			return true;
 		case R.id.action_update_feeds:
-			updateFeeds();
+			updateFeeds(db.getFeeds());
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
@@ -168,7 +170,7 @@ public class FeedListActivity extends Activity {
 
 			// TODO: Replace the thread pool with one dedicated to limiting how
 			// many feeds are updated at once
-			new UpdateFeedTask(db).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, feed);
+			updateFeeds(Collections.singletonList(feed));
 		} catch (MalformedURLException e) {
 			AlertDialog.Builder alert = new AlertDialog.Builder(this);
 			alert.setTitle("I'm sorry");
@@ -184,9 +186,8 @@ public class FeedListActivity extends Activity {
 		}
 	}
 
-	private void updateFeeds() {
-		for (Feed feed : db.getFeeds()) {
-			new UpdateFeedTask(db).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, feed);
-		}
+	private void updateFeeds(List<Feed> feeds) {
+		ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress);
+		new UpdateFeedsTask(db, progressBar).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, feeds.toArray(new Feed[0]));
 	}
 }
