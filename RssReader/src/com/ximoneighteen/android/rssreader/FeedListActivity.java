@@ -3,7 +3,6 @@ package com.ximoneighteen.android.rssreader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -43,7 +42,7 @@ public class FeedListActivity extends Activity {
 		setContentView(R.layout.activity_feed_list);
 
 		db = DbHelper.getInstance(this);
-		final List<? extends Identifiable> list = db.getFeeds(); 
+		final List<? extends Identifiable> list = db.getFeeds();
 
 		final Context context = this;
 
@@ -56,14 +55,15 @@ public class FeedListActivity extends Activity {
 			@Override
 			public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
 				final Feed feed = (Feed) parent.getItemAtPosition(position);
-				confirmAction("Are you sure you want to delete the '" + feed.getTitle() + "' feed?", new ConfirmableAction() {
-					@Override
-					public void run() {
-						db.removeFeed(feed);
-						adapter.remove(feed);
-						adapter.notifyDataSetChanged();
-					}
-				});
+				confirmAction("Are you sure you want to delete the '" + feed.getTitle() + "' feed?",
+						new ConfirmableAction() {
+							@Override
+							public void run() {
+								db.removeFeed(feed);
+								adapter.remove(feed);
+								adapter.notifyDataSetChanged();
+							}
+						});
 				return true;
 			}
 		});
@@ -122,6 +122,9 @@ public class FeedListActivity extends Activity {
 		case R.id.action_add_feed:
 			getFeedURL();
 			return true;
+		case R.id.action_update_feeds:
+			updateFeeds();
+			return true;
 		default:
 			return super.onOptionsItemSelected(item);
 		}
@@ -162,8 +165,9 @@ public class FeedListActivity extends Activity {
 			db.putFeed(feed);
 
 			adapter.add(feed);
-		
-			// TODO: Replace the thread pool with one dedicated to limiting how many feeds are updated at once
+
+			// TODO: Replace the thread pool with one dedicated to limiting how
+			// many feeds are updated at once
 			new UpdateFeedTask(db).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, feed);
 		} catch (MalformedURLException e) {
 			AlertDialog.Builder alert = new AlertDialog.Builder(this);
@@ -180,4 +184,9 @@ public class FeedListActivity extends Activity {
 		}
 	}
 
+	private void updateFeeds() {
+		for (Feed feed : db.getFeeds()) {
+			new UpdateFeedTask(db).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, feed);
+		}
+	}
 }

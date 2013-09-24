@@ -3,8 +3,7 @@ package com.ximoneighteen.android.rssreader.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ProtocolException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
 
 import org.xmlpull.v1.XmlPullParser;
 
@@ -20,22 +19,29 @@ public class RssDownloader implements Runnable {
 	private static final String TITLE = "title";
 	private static final String DESCRIPTION = "description";
 	private static final String LINK = "link";
+	private static final String GUID = "guid";
 	private static final String PUB_DATE = "pubDate";
 	private static final String CHANNEL = "channel";
 
 	private final Feed feed;
 
-	private List<Article> articles = null;
+	private HttpHelper httpHelper = null;
 
 	public RssDownloader(final Feed feed) {
 		this.feed = feed;
+		this.httpHelper = new HttpHelper();
+	}
+
+	public RssDownloader(final HttpHelper httpHelper, final Feed feed) {
+		this.feed = feed;
+		this.httpHelper = httpHelper;
 	}
 
 	@Override
 	public void run() {
 		InputStream is = null;
 		try {
-			is = HttpHelper.getInputStreamFromURL(feed.getUrl());
+			is = httpHelper.getInputStreamFromURL(feed.getUrl());
 			if (is != null) {
 				parseXML(is);
 			}
@@ -71,7 +77,6 @@ public class RssDownloader implements Runnable {
 				String name = null;
 				switch (eventType) {
 				case XmlPullParser.START_DOCUMENT:
-					articles = new ArrayList<Article>();
 					break;
 				case XmlPullParser.START_TAG:
 					name = parser.getName();
@@ -87,13 +92,15 @@ public class RssDownloader implements Runnable {
 							article.setDate(parser.nextText());
 						} else if (name.equalsIgnoreCase(TITLE)) {
 							article.setTitle(parser.nextText());
+						} else if (name.equalsIgnoreCase(GUID)) {
+							article.setGuid(parser.nextText());
 						}
 					}
 					break;
 				case XmlPullParser.END_TAG:
 					name = parser.getName();
 					if (name.equalsIgnoreCase(ITEM) && article != null) {
-						articles.add(article);
+						mergeArticleIntoFeed(article);
 					} else if (name.equalsIgnoreCase(CHANNEL)) {
 						done = true;
 					}
@@ -106,8 +113,20 @@ public class RssDownloader implements Runnable {
 		}
 	}
 
-	public List<Article> getArticles() {
-		return articles;
+	private void mergeArticleIntoFeed(final Article article) {
+		if (feed.getArticles() == null) {
+			feed.setArticles(Collections.singletonList(article));
+		} else {
+			Article existingArticle = feed.findArticleByGuid(article.getGuid());
+			if (existingArticle != null) {
+				if (article.getDate().after(existingArticle.getDate())) {
+					feed.getArticles().remove(existingArticle);
+					feed.getArticles().add(article);
+				}
+			} else {
+				feed.getArticles().add(article);
+			}
+		}
 	}
 
 }

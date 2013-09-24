@@ -8,7 +8,7 @@ import java.net.URL;
 
 public class HttpHelper {
 
-	public static InputStream getInputStreamFromURL(final URL url)
+	public InputStream getInputStreamFromURL(final URL url)
 			throws IOException, ProtocolException {
 		InputStream resultInputStream = null;
 		HttpURLConnection conn = (HttpURLConnection) url.openConnection();

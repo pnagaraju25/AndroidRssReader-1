@@ -2,6 +2,8 @@ package com.ximoneighteen.android.rssreader.model;
 
 import java.io.Serializable;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Feed implements Comparable<Feed>, Serializable, Identifiable {
 	private static final long serialVersionUID = 8247717596952493083L;
@@ -9,6 +11,7 @@ public class Feed implements Comparable<Feed>, Serializable, Identifiable {
 	private long id;
 	private String title;
 	private URL url;
+	private List<Article> articles;
 
 	@Override
 	public int compareTo(Feed another) {
@@ -41,6 +44,17 @@ public class Feed implements Comparable<Feed>, Serializable, Identifiable {
 
 	public void setUrl(URL uri) {
 		this.url = uri;
+	}
+
+	public List<Article> getArticles() {
+		return articles;
+	}
+
+	public void setArticles(List<Article> articles) {
+		if (this.articles != null) {
+			this.articles.clear();
+		}
+		this.articles = new ArrayList<Article>(articles);
 	}
 
 	@Override
@@ -80,6 +94,15 @@ public class Feed implements Comparable<Feed>, Serializable, Identifiable {
 		} else if (!url.equals(other.url))
 			return false;
 		return true;
+	}
+
+	public Article findArticleByGuid(String guid) {
+		if (articles != null) {
+			for (Article a : articles) {
+				if (guid.contentEquals(a.getGuid())) return a;
+			}
+		}
+		return null;
 	}
 
 }

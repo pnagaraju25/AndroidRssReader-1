@@ -26,9 +26,10 @@ public class DbHelper extends SQLiteOpenHelper {
 			Feeds.COLUMN_NAME_TITLE, Feeds.COLUMN_NAME_URI);
 
 	private static final String SQL_CREATE_ARTICLES = String.format(
-			"CREATE TABLE %s (%s INTEGER PRIMARY KEY,%s TEXT,%s TEXT,%s TEXT,%s INTEGER, %s INTEGER)",
+			"CREATE TABLE %s (%s INTEGER PRIMARY KEY,%s TEXT,%s TEXT,%s TEXT,%s INTEGER, %s INTEGER, %s TEXT)",
 			Articles.TABLE_NAME, Articles.COLUMN_NAME_ID, Articles.COLUMN_NAME_TITLE, Articles.COLUMN_NAME_DESCRIPTION,
-			Articles.COLUMN_NAME_LINK, Articles.COLUMN_NAME_DATE, Articles.COLUMN_NAME_FEED_ID);
+			Articles.COLUMN_NAME_LINK, Articles.COLUMN_NAME_DATE, Articles.COLUMN_NAME_FEED_ID,
+			Articles.COLUMN_NAME_GUID);
 
 	private static final String SQL_CREATE_PARAS = String.format(
 			"CREATE TABLE %s (%s INTEGER PRIMARY KEY,%s INTEGER,%s TEXT)", Paragraphs.TABLE_NAME,
@@ -71,39 +72,41 @@ public class DbHelper extends SQLiteOpenHelper {
 		onCreate(db);
 	}
 
-	public Article getArticleByTitle(final String title, final boolean fetchParagraphs) {
+	public Article getArticleByTitle(final String title) {
+		List<Article> articles = getArticleByWhereClause(Articles.COLUMN_NAME_TITLE + " = ?", new String[] { title });
+		return (articles == null ? null : articles.get(0));
+	}
+
+	public List<Article> getArticlesByFeedId(final long feedId) {
+		return getArticleByWhereClause(Articles.COLUMN_NAME_FEED_ID + " = ?", new String[] { String.valueOf(feedId) });
+	}
+
+	public List<Article> getArticleByWhereClause(String whereClause, String[] whereClauseArgs) {
 		String[] fetchColumns = { Articles.COLUMN_NAME_ID, Articles.COLUMN_NAME_TITLE,
 				Articles.COLUMN_NAME_DESCRIPTION, Articles.COLUMN_NAME_LINK, Articles.COLUMN_NAME_FEED_ID };
-		String sortOrder = null;
-		String whereClause = Articles.COLUMN_NAME_TITLE + " = ?";
-		String[] whereClauseArgs = new String[] { title };
+		String sortOrder = Articles.COLUMN_NAME_DATE + " DESC";
 		String groupBy = null;
 		String filterBy = null;
 
-		Log.d("XIMON", "Fetching article '" + title + "' from the database");
 		SQLiteDatabase db = getReadableDatabase();
 		Cursor cursor = db.query(Articles.TABLE_NAME, fetchColumns, whereClause, whereClauseArgs, groupBy, filterBy,
 				sortOrder);
 
 		try {
+			List<Article> articles = new ArrayList<Article>();
 			cursor.moveToFirst();
-			if (cursor.getCount() == 1) {
+			while (!cursor.isAfterLast()) {
 				Article article = new Article();
 				article.setId(cursor.getLong(0));
 				article.setTitle(cursor.getString(1));
 				article.setDescription(cursor.getString(2));
 				article.setLink(cursor.getString(3));
 				article.setFeedId(cursor.getLong(4));
-				Log.d("XIMON", "Fetched article " + article.getId() + ": " + article.getTitle());
-
-				if (fetchParagraphs) {
-					getArticleParagraphs(article);
-				}
-
-				return article;
+				getArticleParagraphs(article);
+				articles.add(article);
+				cursor.moveToNext();
 			}
-
-			return null;
+			return articles;
 		} finally {
 			if (cursor != null) {
 				cursor.close();
@@ -132,43 +135,6 @@ public class DbHelper extends SQLiteOpenHelper {
 				cursor.moveToNext();
 			}
 			article.setParagraphs(paras);
-		} finally {
-			if (cursor != null) {
-				cursor.close();
-			}
-		}
-	}
-
-	public List<Article> getArticlesForFeed(long feedId) {
-		String[] fetchColumns = { Articles.COLUMN_NAME_ID, Articles.COLUMN_NAME_TITLE,
-				Articles.COLUMN_NAME_DESCRIPTION, Articles.COLUMN_NAME_LINK, Articles.COLUMN_NAME_FEED_ID };
-		String sortOrder = Articles.COLUMN_NAME_DATE + " DESC";
-		String whereClause = Articles.COLUMN_NAME_FEED_ID + " = ?";
-		String[] whereClauseArgs = { String.valueOf(feedId) };
-		String groupBy = null;
-		String filterBy = null;
-
-		Log.d("XIMON", "Fetching articles from the database for feed " + feedId);
-		SQLiteDatabase db = getReadableDatabase();
-		Cursor cursor = db.query(Articles.TABLE_NAME, fetchColumns, whereClause, whereClauseArgs, groupBy, filterBy,
-				sortOrder);
-
-		try {
-			List<Article> articles = new ArrayList<Article>();
-			cursor.moveToFirst();
-			while (!cursor.isAfterLast()) {
-				Article article = new Article();
-				article.setId(cursor.getLong(0));
-				article.setTitle(cursor.getString(1));
-				article.setDescription(cursor.getString(2));
-				article.setLink(cursor.getString(3));
-				article.setFeedId(cursor.getLong(4));
-				getArticleParagraphs(article);
-				articles.add(article);
-				cursor.moveToNext();
-				Log.d("XIMON", "Fetched article " + article.getId() + ": " + article.getTitle());
-			}
-			return articles;
 		} finally {
 			if (cursor != null) {
 				cursor.close();
@@ -257,10 +223,12 @@ public class DbHelper extends SQLiteOpenHelper {
 
 	public void removeFeed(final Feed feed) {
 		SQLiteDatabase writeDb = getWritableDatabase();
-		for (Article article : getArticlesForFeed(feed.getId())) {
-			writeDb.delete(Paragraphs.TABLE_NAME, Paragraphs.COLUMN_NAME_ITEM_ID + " = ?", new String[] { String.valueOf(article.getId()) });
+		for (Article article : getArticlesByFeedId(feed.getId())) {
+			writeDb.delete(Paragraphs.TABLE_NAME, Paragraphs.COLUMN_NAME_ITEM_ID + " = ?",
+					new String[] { String.valueOf(article.getId()) });
 		}
-		writeDb.delete(Articles.TABLE_NAME, Articles.COLUMN_NAME_FEED_ID + " = ?", new String[] { String.valueOf(feed.getId()) });
+		writeDb.delete(Articles.TABLE_NAME, Articles.COLUMN_NAME_FEED_ID + " = ?",
+				new String[] { String.valueOf(feed.getId()) });
 		writeDb.delete(Feeds.TABLE_NAME, Feeds.COLUMN_NAME_ID + " = ?", new String[] { String.valueOf(feed.getId()) });
 	}
 }

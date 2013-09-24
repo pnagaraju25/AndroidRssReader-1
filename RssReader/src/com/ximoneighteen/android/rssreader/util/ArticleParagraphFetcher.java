@@ -15,9 +15,13 @@ import android.util.Xml;
 
 public class ArticleParagraphFetcher {
 	public static ArrayList<String> fetch(final URL url) {
+		return fetch(new HttpHelper(), url);
+	}
+
+	public static ArrayList<String> fetch(final HttpHelper httpHelper, final URL url) {
 		InputStream is = null;
 		try {
-			is = HttpHelper.getInputStreamFromURL(url);
+			is = httpHelper.getInputStreamFromURL(url);
 			if (is != null) {
 				return parseXML(is);
 			}

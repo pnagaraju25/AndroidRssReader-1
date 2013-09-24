@@ -6,7 +6,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -34,7 +33,7 @@ public class ArticleListActivity extends Activity {
 
 		Intent intent = getIntent();
 		feed = (Feed) intent.getSerializableExtra("feed");
-		List<? extends Identifiable> articles = db.getArticlesForFeed(feed.getId());
+		List<? extends Identifiable> articles = db.getArticlesByFeedId(feed.getId());
 
 		final ListView listview = (ListView) findViewById(R.id.articleListView);
 		adapter = new IdentifiableListAdapter(this, android.R.layout.simple_list_item_1, (List<Identifiable>) articles);

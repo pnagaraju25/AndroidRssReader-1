@@ -14,14 +14,14 @@ public class UpdateFeedTask extends AsyncTask<Feed, Void, Void> {
 	public UpdateFeedTask(DbHelper db) {
 		this.db = db;
 	}
-	
+
 	@Override
 	protected Void doInBackground(Feed... params) {
 		Feed feed = params[0];
 		RssDownloader downloader = new RssDownloader(feed);
 		downloader.run();
 
-		List<Article> articles = downloader.getArticles();
+		List<Article> articles = feed.getArticles();
 		if (articles != null) {
 			for (Article article : articles) {
 				article.setParagraphs(ArticleParagraphFetcher.fetch(article.getLink()));
