@@ -71,8 +71,15 @@ public class RssDownloader implements Runnable {
 			// auto-detect the encoding from the stream
 			parser.setInput(is, null);
 			int eventType = parser.getEventType();
-			Article article = null;
 			boolean done = false;
+
+			boolean inItem = false;
+			String title = null;
+			String description = null;
+			String link = null;
+			String date = null;
+			String guid = null;
+
 			while (eventType != XmlPullParser.END_DOCUMENT && !done) {
 				String name = null;
 				switch (eventType) {
@@ -81,25 +88,26 @@ public class RssDownloader implements Runnable {
 				case XmlPullParser.START_TAG:
 					name = parser.getName();
 					if (name.equalsIgnoreCase(ITEM)) {
-						article = new Article();
-						article.setFeedId(feed.getId());
-					} else if (article != null) {
+						inItem = true;
+					} else if (inItem) {
 						if (name.equalsIgnoreCase(LINK)) {
-							article.setLink(parser.nextText());
+							link = parser.nextText();
 						} else if (name.equalsIgnoreCase(DESCRIPTION)) {
-							article.setDescription(parser.nextText());
+							description = parser.nextText();
 						} else if (name.equalsIgnoreCase(PUB_DATE)) {
-							article.setDate(parser.nextText());
+							date = parser.nextText();
 						} else if (name.equalsIgnoreCase(TITLE)) {
-							article.setTitle(parser.nextText());
+							title = parser.nextText();
 						} else if (name.equalsIgnoreCase(GUID)) {
-							article.setGuid(parser.nextText());
+							guid = parser.nextText();
 						}
 					}
 					break;
 				case XmlPullParser.END_TAG:
 					name = parser.getName();
-					if (name.equalsIgnoreCase(ITEM) && article != null) {
+					if (name.equalsIgnoreCase(ITEM) && inItem) {
+						Article article = new Article(title, description, link, guid, date);
+						article.setFeedId(feed.getId());
 						mergeArticleIntoFeed(article);
 					} else if (name.equalsIgnoreCase(CHANNEL)) {
 						done = true;

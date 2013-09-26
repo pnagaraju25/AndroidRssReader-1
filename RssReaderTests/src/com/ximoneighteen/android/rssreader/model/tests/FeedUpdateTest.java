@@ -67,10 +67,8 @@ public class FeedUpdateTest extends AndroidTestCase {
 	}
 
 	private static Article generateArticle(final String title) {
-		Article a = new Article();
-		a.setDate(new Date());
-		a.setTitle(title);
-		a.setGuid(String.valueOf(new SecureRandom().nextInt()));
+		String guid = String.valueOf(new SecureRandom().nextInt());
+		Article a = new Article(title, "Test description", "http://testlink/", guid, new Date());
 		return a;
 	}
 

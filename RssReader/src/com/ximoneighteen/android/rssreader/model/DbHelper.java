@@ -73,17 +73,43 @@ public class DbHelper extends SQLiteOpenHelper {
 	}
 
 	public Article getArticleByTitle(final String title) {
-		List<Article> articles = getArticleByWhereClause(Articles.COLUMN_NAME_TITLE + " = ?", new String[] { title });
+		return getArticleByTitle(title, false);
+	}
+
+	public Article getArticleWithBodyByTitle(final String title) {
+		return getArticleByTitle(title, true);
+	}
+
+	private Article getArticleByTitle(String title, boolean fetchArticleBody) {
+		List<Article> articles = getArticleByWhereClause(Articles.COLUMN_NAME_TITLE + " = ?", new String[] { title },
+				fetchArticleBody);
+		return (articles == null ? null : articles.get(0));
+	}
+
+	public Article getArticleWithBodyById(long id) {
+		List<Article> articles = getArticleByWhereClause(Articles.COLUMN_NAME_ID + " = ?",
+				new String[] { String.valueOf(id) }, true);
 		return (articles == null ? null : articles.get(0));
 	}
 
 	public List<Article> getArticlesByFeedId(final long feedId) {
-		return getArticleByWhereClause(Articles.COLUMN_NAME_FEED_ID + " = ?", new String[] { String.valueOf(feedId) });
+		return getArticlesByFeedId(feedId, false);
 	}
 
-	public List<Article> getArticleByWhereClause(String whereClause, String[] whereClauseArgs) {
+	public List<Article> getArticlesWithBodiesByFeedId(final long feedId) {
+		return getArticlesByFeedId(feedId, true);
+	}
+
+	private List<Article> getArticlesByFeedId(long feedId, boolean fetchArticleBodies) {
+		return getArticleByWhereClause(Articles.COLUMN_NAME_FEED_ID + " = ?", new String[] { String.valueOf(feedId) },
+				fetchArticleBodies);
+	}
+
+	public List<Article> getArticleByWhereClause(String whereClause, String[] whereClauseArgs,
+			boolean fetchArticleBodies) {
 		String[] fetchColumns = { Articles.COLUMN_NAME_ID, Articles.COLUMN_NAME_TITLE,
-				Articles.COLUMN_NAME_DESCRIPTION, Articles.COLUMN_NAME_LINK, Articles.COLUMN_NAME_FEED_ID };
+				Articles.COLUMN_NAME_DESCRIPTION, Articles.COLUMN_NAME_LINK, Articles.COLUMN_NAME_FEED_ID,
+				Articles.COLUMN_NAME_DATE, Articles.COLUMN_NAME_GUID };
 		String sortOrder = Articles.COLUMN_NAME_DATE + " DESC";
 		String groupBy = null;
 		String filterBy = null;
@@ -96,13 +122,22 @@ public class DbHelper extends SQLiteOpenHelper {
 			List<Article> articles = new ArrayList<Article>();
 			cursor.moveToFirst();
 			while (!cursor.isAfterLast()) {
-				Article article = new Article();
-				article.setId(cursor.getLong(0));
-				article.setTitle(cursor.getString(1));
-				article.setDescription(cursor.getString(2));
-				article.setLink(cursor.getString(3));
-				article.setFeedId(cursor.getLong(4));
-				getArticleParagraphs(article);
+				long id = cursor.getLong(0);
+				String title = cursor.getString(1);
+				String description = cursor.getString(2);
+				String link = cursor.getString(3);
+				long feedId = cursor.getLong(4);
+				String date = cursor.getString(5);
+				String guid = cursor.getString(6);
+
+				Article article = new Article(title, description, link, guid, date);
+				article.setId(id);
+				article.setFeedId(feedId);
+
+				if (fetchArticleBodies) {
+					getArticleParagraphs(article);
+				}
+
 				articles.add(article);
 				cursor.moveToNext();
 			}
@@ -129,12 +164,10 @@ public class DbHelper extends SQLiteOpenHelper {
 
 		try {
 			cursor.moveToFirst();
-			ArrayList<String> paras = new ArrayList<String>();
 			while (!cursor.isAfterLast()) {
-				paras.add(cursor.getString(0));
+				article.getParagraphs().add(cursor.getString(0));
 				cursor.moveToNext();
 			}
-			article.setParagraphs(paras);
 		} finally {
 			if (cursor != null) {
 				cursor.close();
@@ -183,6 +216,10 @@ public class DbHelper extends SQLiteOpenHelper {
 
 	}
 
+	/**
+	 * if article.getGuid() == null || article.getGuid().isEmpty() INSERT else
+	 * UPDATE
+	 */
 	public long putArticle(final Article article) {
 		SQLiteDatabase writeDb = getWritableDatabase();
 		ContentValues values = new ContentValues();
@@ -190,9 +227,16 @@ public class DbHelper extends SQLiteOpenHelper {
 		values.put(Articles.COLUMN_NAME_DESCRIPTION, article.getDescription());
 		values.put(Articles.COLUMN_NAME_LINK, article.getLink().toExternalForm());
 		values.put(Articles.COLUMN_NAME_FEED_ID, article.getFeedId());
-		long id = writeDb.insert(Articles.TABLE_NAME, null, values);
-		article.setId(id);
-		Log.d("XIMON", "Stored article " + id + ": " + article.getTitle());
+		values.put(Articles.COLUMN_NAME_DATE, article.getDateAsString());
+		values.put(Articles.COLUMN_NAME_GUID, article.getGuid());
+
+		if (article.getId() == -1) {
+			long id = writeDb.insert(Articles.TABLE_NAME, null, values);
+			article.setId(id);
+		} else {
+			writeDb.update(Articles.TABLE_NAME, values, Articles.COLUMN_NAME_ID + " = ?",
+					new String[] { String.valueOf(article.getId()) });
+		}
 
 		List<String> paragraphs = article.getParagraphs();
 		if (paragraphs == null) {
@@ -204,10 +248,9 @@ public class DbHelper extends SQLiteOpenHelper {
 			paraValues.put(Paragraphs.COLUMN_NAME_ITEM_ID, article.getId());
 			paraValues.put(Paragraphs.COLUMN_NAME_PARAGRAPH, para);
 			writeDb.insert(Paragraphs.TABLE_NAME, null, paraValues);
-			Log.d("XIMON", "Stored paragraph for article " + id);
 		}
 
-		return id;
+		return article.getId();
 	}
 
 	public long putFeed(final Feed feed) {

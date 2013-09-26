@@ -5,6 +5,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -14,15 +15,55 @@ public class Article implements Comparable<Article>, Serializable, Identifiable,
 
 	public static SimpleDateFormat FORMATTER = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
 
-	private long id;
+	private long id = -1;
 	private long feedId;
 	private String title;
 	private URL link;
 	private String description;
 	private String guid;
 	private Date date;
-	private List<String> paragraphs;
+	private List<String> paragraphs = new ArrayList<String>();
 	private boolean read = false;
+
+	public Article(String title, String description, String link, String guid, Date date) {
+		if (title == null || description == null || link == null || guid == null || date == null) {
+			throw new IllegalArgumentException();
+		}
+
+		setTitle(title);
+		setDescription(description);
+		setLink(link);
+		setGuid(guid);
+		setDate(date);
+	}
+
+	public Article(String title, String description, String link, String guid, String date) {
+		this(title, description, link, guid, convertStringToDate(date));
+	}
+
+	private static URL convertStringToURL(String link) {
+		try {
+			return new URL(link);
+		} catch (MalformedURLException e) {
+			throw new IllegalArgumentException(e);
+		}
+	}
+
+	private static Date convertStringToDate(String date) {
+		Date newDate = null;
+
+		// pad the date if necessary
+		while (!date.endsWith("00")) {
+			date += "0";
+		}
+		try {
+			newDate = FORMATTER.parse(date.trim());
+		} catch (ParseException e) {
+			throw new IllegalArgumentException(e);
+		}
+
+		return newDate;
+	}
 
 	// sort by date
 	public int compareTo(Article another) {
@@ -38,15 +79,15 @@ public class Article implements Comparable<Article>, Serializable, Identifiable,
 	}
 
 	public void setLink(String link) {
-		try {
-			this.link = new URL(link);
-		} catch (MalformedURLException e) {
-			throw new RuntimeException(e);
-		}
+		this.link = convertStringToURL(link);
 	}
 
 	public Date getDate() {
 		return date;
+	}
+
+	public String getDateAsString() {
+		return FORMATTER.format(date);
 	}
 
 	public void setDate(Date date) {
@@ -54,15 +95,7 @@ public class Article implements Comparable<Article>, Serializable, Identifiable,
 	}
 
 	public void setDate(String date) {
-		// pad the date if necessary
-		while (!date.endsWith("00")) {
-			date += "0";
-		}
-		try {
-			this.date = FORMATTER.parse(date.trim());
-		} catch (ParseException e) {
-			throw new RuntimeException(e);
-		}
+		convertStringToDate(date);
 	}
 	
 	public String getTitle() {
@@ -189,7 +222,7 @@ public class Article implements Comparable<Article>, Serializable, Identifiable,
 			return false;
 		return true;
 	}
-
+	
 	@Override
 	public String toString() {
 		return getTitle();

@@ -19,10 +19,8 @@ public class DbHelperTest extends AndroidTestCase {
 		dbHelper = new DbHelper(getContext());
 		dbHelper.onUpgrade(dbHelper.getWritableDatabase(), -1, -1);
 
-		article = new Article();
-		article.setTitle("My title");
-		article.setDescription("My description");
-		article.setLink("http://mylink");
+		String myDate = "Wed, 09 Apr 1978 13:14:15 UTC";
+		article = new Article("My title", "My description", "http://mylink", "My GUID", myDate);
 		article.setParagraphs(Arrays.asList(new String[] { "Para1", "Para2" }));
 	}
 
@@ -56,11 +54,11 @@ public class DbHelperTest extends AndroidTestCase {
 		article.setFeedId(1);
 		dbHelper.putArticle(article);
 
-		List<Article> articlesForFeed1 = dbHelper.getArticlesByFeedId(1);
+		List<Article> articlesForFeed1 = dbHelper.getArticlesWithBodiesByFeedId(1);
 		assertEquals(1, articlesForFeed1.size());
 		assertEquals(article, articlesForFeed1.get(0));
 
-		List<Article> articlesForFeed2 = dbHelper.getArticlesByFeedId(2);
+		List<Article> articlesForFeed2 = dbHelper.getArticlesWithBodiesByFeedId(2);
 		assertTrue(articlesForFeed2.isEmpty());
 	}
 
@@ -68,7 +66,7 @@ public class DbHelperTest extends AndroidTestCase {
 		dbHelper.putArticle(article);
 		assertEquals(1, article.getId());
 
-		Article foundArticle = dbHelper.getArticleByTitle(article.getTitle());
+		Article foundArticle = dbHelper.getArticleWithBodyByTitle(article.getTitle());
 		assertEquals(article, foundArticle);
 	}
 

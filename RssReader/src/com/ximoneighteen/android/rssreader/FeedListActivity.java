@@ -14,6 +14,7 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.AsyncTask.Status;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -36,6 +37,8 @@ public class FeedListActivity extends Activity {
 	private static DbHelper db;
 
 	private IdentifiableListAdapter adapter;
+
+	private AsyncTask<Feed, Integer, Void> updateTask;
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -187,7 +190,10 @@ public class FeedListActivity extends Activity {
 	}
 
 	private void updateFeeds(List<Feed> feeds) {
-		ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress);
-		new UpdateFeedsTask(db, progressBar).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, feeds.toArray(new Feed[0]));
+		if (updateTask == null || updateTask.getStatus() == Status.FINISHED) {
+			ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress);
+			updateTask = new UpdateFeedsTask(db, progressBar).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,
+					feeds.toArray(new Feed[0]));
+		}
 	}
 }

@@ -47,7 +47,7 @@ public class ArticleListActivity extends Activity {
 			public void onItemClick(AdapterView<?> parent, final View view, int position, long id) {
 				final Article article = (Article) parent.getItemAtPosition(position);
 				final Intent intent = new Intent(context, ArticleViewActivity.class);
-				intent.putExtra("body", article);
+				intent.putExtra("body", db.getArticleWithBodyById(article.getId()));
 				startActivity(intent);
 			}
 

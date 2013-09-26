@@ -43,6 +43,10 @@ public class UpdateFeedsTask extends AsyncTask<Feed, Integer, Void> {
 			AsyncTask<Feed, Integer, Void> task = new UpdateFeedTask(db, progressBar, progressBarPercentagePerFeed)
 					.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, feed);
 			tasks.add(task);
+			if (isCancelled()) {
+				for (AsyncTask<Feed, Integer, Void> t : tasks) t.cancel(true);
+				return null;
+			}
 		}
 
 		for (AsyncTask<Feed, Integer, Void> task : tasks) {
